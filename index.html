@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#b44a1e" />
+    <meta
+      name="description"
+      content="Demo Sweet Shop — browse our menu of fresh sweets and snacks. No online ordering."
+    />
+    <meta property="og:title" content="Demo Sweet Shop" />
+    <meta
+      property="og:description"
+      content="Fresh sweets and snacks. Browse only — visit us in store."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="assets/share.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Demo Sweet Shop — fresh sweets and snacks" />
+    <meta property="og:locale" content="en_IN" />
+    <meta property="og:locale:alternate" content="hi_IN" />
+    <!-- CSP: configure via HTTP header on your hosting server, not meta tag.
+       Recommended: default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; connect-src 'self' -->
+    <title>Demo Sweet Shop</title>
+    <link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
+    <link rel="manifest" href="manifest.json" />
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
+    <header class="shop-header">
+      <h1 class="shop-title" data-i18n="shopName">Demo Sweet Shop</h1>
+      <button id="langToggle" class="lang-btn" aria-label="Switch language">हिंदी</button>
+    </header>
+
+    <section class="special-banner" id="specialBanner" hidden>
+      <span class="special-badge" data-i18n="todaySpecial">Today's Special</span>
+      <span class="special-name" id="specialName"></span>
+    </section>
+
+    <nav class="filter-bar" id="filterBar" aria-label="Filter by category">
+      <button class="filter-btn active" data-filter="all" data-i18n="filterAll">All</button>
+      <button class="filter-btn" data-filter="sweet" data-i18n="filterSweet">Sweets</button>
+      <button class="filter-btn" data-filter="snack" data-i18n="filterSnack">Snacks</button>
+    </nav>
+
+    <main class="menu-grid" id="menuGrid" aria-live="polite" aria-busy="true">
+      <noscript>
+        <p class="noscript-msg">
+          This menu requires JavaScript to display items. Please enable JavaScript or contact the
+          shop directly.
+        </p>
+      </noscript>
+    </main>
+
+    <section class="testimonials-section" id="testimonialsSection" hidden>
+      <h2 class="testimonials-title" data-i18n="testimonialsTitle">What customers say</h2>
+      <div class="testimonials-list" id="testimonialsList"></div>
+    </section>
+
+    <footer class="shop-footer">
+      <p data-i18n="browseOnly">Browse only — no online ordering.</p>
+      <p class="footer-hours" id="shopHours"></p>
+      <p class="footer-address" id="shopAddress"></p>
+      <a
+        class="footer-directions"
+        id="directionsLink"
+        href="#"
+        target="_blank"
+        rel="noopener"
+        data-i18n="getDirections"
+        >Get Directions</a
+      >
+      <p class="footer-meta">
+        <span data-i18n="menuUpdated">Menu updated</span>:
+        <time id="lastUpdated"></time>
+      </p>
+      <button class="btn-share" id="btnShare" data-i18n="shareMenu">Share Menu</button>
+    </footer>
+
+    <a
+      class="whatsapp-fab"
+      id="whatsappFab"
+      href="#"
+      target="_blank"
+      rel="noopener"
+      aria-label="Order on WhatsApp"
+    >
+      <svg
+        width="28"
+        height="28"
+        viewBox="0 0 24 24"
+        fill="currentColor"
+        aria-hidden="true"
+        focusable="false"
+      >
+        <path
+          d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"
+        />
+      </svg>
+      <span class="whatsapp-fab-text" data-i18n="whatsappOrder">Order on WhatsApp</span>
+    </a>
+
+    <script src="js/i18n.js"></script>
+    <script src="js/menu.js"></script>
+  </body>
+</html>

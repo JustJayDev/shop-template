@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#b44a1e" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Admin — Demo Sweet Shop</title>
+    <link rel="stylesheet" href="css/admin.css" />
+  </head>
+  <body>
+    <div id="pinGate" class="pin-gate">
+      <form id="pinForm" class="pin-form">
+        <h1 class="pin-title">Admin Access</h1>
+        <p class="pin-hint">Enter password to manage the shop</p>
+        <input
+          type="password"
+          id="pinInput"
+          class="pin-input"
+          placeholder="••••••••"
+          autocomplete="current-password"
+        />
+        <button type="submit" class="btn btn-primary">Unlock</button>
+        <p id="pinError" class="pin-error" hidden>Wrong password. Try again.</p>
+        <p class="pin-note">
+          Client-side demo gate. Data is local to this browser and exported as JSON.
+        </p>
+      </form>
+    </div>
+
+    <div id="adminPanel" class="admin-panel" hidden>
+      <header class="admin-header">
+        <h1 class="admin-title">Shop Admin</h1>
+        <div class="admin-actions">
+          <button id="btnExport" class="btn btn-secondary">Export items.json</button>
+          <button id="btnExportShop" class="btn btn-secondary">Export shop.json</button>
+          <button id="btnExportHistory" class="btn btn-secondary">Export history.json</button>
+          <button id="btnReset" class="btn btn-danger">Reset to default</button>
+          <button id="btnLock" class="btn btn-ghost">Lock</button>
+        </div>
+      </header>
+
+      <nav class="admin-tabs" role="tablist">
+        <button class="admin-tab active" data-tab="items" role="tab">Items</button>
+        <button class="admin-tab" data-tab="shop" role="tab">Shop Settings</button>
+        <button class="admin-tab" data-tab="history" role="tab">History</button>
+      </nav>
+
+      <section id="tab-items" class="admin-tabpanel">
+        <div class="admin-toolbar">
+          <button id="btnAddItem" class="btn btn-primary">+ Add Item</button>
+          <span id="itemCount" class="item-count"></span>
+        </div>
+        <div id="itemList" class="item-list"></div>
+      </section>
+
+      <section id="tab-shop" class="admin-tabpanel" hidden>
+        <form id="shopForm" class="shop-form">
+          <label class="field">
+            <span>Shop name</span>
+            <input type="text" id="shopName" />
+          </label>
+          <label class="field">
+            <span>WhatsApp number (digits only, country code first)</span>
+            <input type="tel" id="shopWhatsapp" placeholder="919876543210" />
+          </label>
+          <label class="field">
+            <span>Address</span>
+            <input type="text" id="shopAddressField" />
+          </label>
+          <label class="field">
+            <span>Google Maps URL</span>
+            <input type="url" id="shopMapsUrl" placeholder="https://maps.google.com/?q=..." />
+          </label>
+          <div class="field-row">
+            <label class="field">
+              <span>Opens at</span>
+              <input type="time" id="shopOpen" />
+            </label>
+            <label class="field">
+              <span>Closes at</span>
+              <input type="time" id="shopClose" />
+            </label>
+          </div>
+          <label class="field">
+            <span>Days open</span>
+            <input type="text" id="shopDays" placeholder="Mon–Sun" />
+          </label>
+          <div class="admin-toolbar">
+            <button type="submit" class="btn btn-primary">Save shop settings</button>
+            <span id="shopSaved" class="item-count"></span>
+          </div>
+        </form>
+      </section>
+
+      <section id="tab-history" class="admin-tabpanel" hidden>
+        <div class="admin-toolbar">
+          <button id="btnClearHistory" class="btn btn-danger">Clear history</button>
+        </div>
+        <div id="historyList" class="history-list"></div>
+      </section>
+    </div>
+
+    <dialog id="editDialog" class="edit-dialog">
+      <form id="editForm" method="dialog">
+        <h2 id="dialogTitle" class="dialog-title">Edit Item</h2>
+        <input type="hidden" id="editId" />
+        <label class="field">
+          <span>Name (EN)</span>
+          <input type="text" id="editName" required />
+        </label>
+        <label class="field">
+          <span>Name (HI)</span>
+          <input type="text" id="editNameHi" required />
+        </label>
+        <div class="field-row">
+          <label class="field">
+            <span>Price (₹)</span>
+            <input type="number" id="editPrice" min="1" step="1" required />
+          </label>
+          <label class="field">
+            <span>Quantity</span>
+            <input type="number" id="editQty" min="0" step="1" required />
+          </label>
+        </div>
+        <label class="field">
+          <span>Category</span>
+          <select id="editCategory">
+            <option value="sweet">Sweet</option>
+            <option value="snack">Snack</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Unit</span>
+          <select id="editUnit">
+            <option value="pc">per piece</option>
+            <option value="kg">per kg</option>
+            <option value="plate">per plate</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Image path</span>
+          <input type="text" id="editImage" placeholder="assets/item.svg" />
+        </label>
+        <label class="field field-checkbox">
+          <input type="checkbox" id="editAiGen" />
+          <span>AI-generated image</span>
+        </label>
+        <label class="field field-checkbox">
+          <input type="checkbox" id="editSpecial" />
+          <span>Show as "Today's Special"</span>
+        </label>
+        <div class="dialog-actions">
+          <button type="button" id="btnCancelEdit" class="btn btn-ghost">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save</button>
+        </div>
+      </form>
+    </dialog>
+
+    <script src="js/admin.js"></script>
+  </body>
+</html>

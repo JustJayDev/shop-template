@@ -1,0 +1,17 @@
+{
+  "name": "Demo Sweet Shop",
+  "short_name": "Sweet Shop",
+  "description": "Browse our menu of fresh sweets and snacks.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#fdf6ec",
+  "theme_color": "#b44a1e",
+  "icons": [
+    {
+      "src": "assets/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

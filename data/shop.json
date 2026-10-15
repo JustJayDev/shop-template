@@ -1,0 +1,17 @@
+{
+  "name": "Demo Sweet Shop",
+  "nameHi": "डेमो मिठाई दुकान",
+  "whatsapp": "919999999999",
+  "address": "Shop No. 12, Market Road, Demo City",
+  "mapsUrl": "https://maps.google.com/?q=Demo+Sweet+Shop",
+  "hours": {
+    "open": "09:00",
+    "close": "21:00",
+    "days": "Mon–Sun"
+  },
+  "testimonials": [
+    { "name": "Priya S.", "text": "Best rasgulla in town! Fresh every morning." },
+    { "name": "Rahul K.", "text": "The samosas are crispy and perfectly spiced." },
+    { "name": "Anita D.", "text": "My kids love the jalebi here. Highly recommend!" }
+  ]
+}

@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#b44a1e" />
+    <title>Page Not Found — Demo Sweet Shop</title>
+    <link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
+    <link rel="stylesheet" href="css/style.css" />
+    <style>
+      .not-found {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 16px;
+        padding: 40px 16px;
+        text-align: center;
+      }
+      .not-found h1 {
+        font-family: var(--font-display);
+        font-size: 3rem;
+        color: var(--clr-accent);
+      }
+      .not-found p {
+        color: var(--clr-muted);
+        font-size: 0.95rem;
+      }
+      .not-found a {
+        color: var(--clr-accent);
+        font-weight: 600;
+        text-decoration: none;
+        border-bottom: 1px solid var(--clr-accent);
+      }
+      .not-found a:hover {
+        border-bottom-width: 2px;
+      }
+    </style>
+  </head>
+  <body>
+    <header class="shop-header">
+      <h1 class="shop-title">Demo Sweet Shop</h1>
+    </header>
+    <main class="not-found">
+      <h1>404</h1>
+      <p>This page doesn't exist. Maybe you're looking for our menu?</p>
+      <a href="index.html">← Back to menu</a>
+    </main>
+    <footer class="shop-footer">
+      <p>Browse only — no online ordering.</p>
+    </footer>
+  </body>
+</html>
