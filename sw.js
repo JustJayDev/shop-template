@@ -1,23 +1,44 @@
-// Service worker — offline cache for the shop template.
-// Bump CACHE whenever any precached file changes.
+// Service worker — offline cache for the shop app.
 //
-// Strategy:
+// CACHE NAMING
+// The cache name is derived from a content hash of the precached files, so
+// a new build always lands in a NEW cache and the old one is dropped on
+// activate. A hand-maintained "shop-v6" string is easy to forget to bump,
+// which is exactly how a stale app shell gets served forever.
+//
+// HOW THE HASH IS BUILT
+// The service worker cannot read its own source file at install time, so the
+// hash is injected by scripts/build-sw.sh, which runs as part of the deploy
+// step. When that script has not run, VERSION falls back to a constant and
+// the worker still works — it just needs a manual bump.
+//
+// STRATEGY
 //   - data/*.json  -> NETWORK-FIRST. The menu must never be stale; a shop
 //                     changing prices has to be reflected on the next visit.
 //                     Cache is only a fallback when the network is down.
+//   - navigations  -> NETWORK-FIRST with a cached index.html fallback, so a
+//                     deployed update is picked up immediately.
 //   - everything else -> CACHE-FIRST.
+//
+// NOTE: the service worker caches the app SHELL only. It never caches the
+// cart: the cart lives in localStorage and is owned by js/cart.js.
 
-const CACHE = "shop-v5";
+const VERSION = "v998414ea6e9d";
+const CACHE = "shop-" + VERSION;
 
 const PRECACHE = [
   "./",
   "index.html",
   "404.html",
   "css/style.css",
-  "js/menu.js",
   "js/i18n.js",
+  "js/hours.js",
+  "js/cart.js",
+  "js/app.js",
   "manifest.json",
-  "assets/favicon.svg"
+  "assets/favicon.svg",
+  "assets/icon-192.png",
+  "assets/icon-512.png"
 ];
 
 // Data files are handled network-first, never served stale-first.
@@ -68,7 +89,6 @@ self.addEventListener("activate", function (event) {
 self.addEventListener("fetch", function (event) {
   const req = event.request;
   if (req.method !== "GET") return;
-
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
 
@@ -87,6 +107,29 @@ self.addEventListener("fetch", function (event) {
         })
         .catch(function () {
           return caches.match(req).then(function (hit) {
+            return hit || Response.error();
+          });
+        })
+    );
+    return;
+  }
+
+  // Network-first for navigations, so a freshly deployed update is picked
+  // up on the next load instead of being pinned to a cached shell.
+  if (req.mode === "navigate") {
+    event.respondWith(
+      fetch(req)
+        .then(function (res) {
+          if (res && res.ok) {
+            const copy = res.clone();
+            caches.open(CACHE).then(function (cache) {
+              cache.put(req, copy);
+            });
+          }
+          return res;
+        })
+        .catch(function () {
+          return caches.match("index.html").then(function (hit) {
             return hit || Response.error();
           });
         })

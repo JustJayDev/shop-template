@@ -6,6 +6,13 @@
   // Password gate. Only the SHA-256 hash is stored — never the plaintext.
   // To change the password, generate a new hash and paste it below:
   //   node -e "console.log(require('crypto').createHash('sha256').update('YOUR_NEW_PASSWORD','utf8').digest('hex'))"
+  //
+  // The hash below is the sha256 of the owner's own password. The plaintext
+  // is NOT in this repository — it is supplied to the admin e2e suite via
+  // the ADMIN_PASSWORD environment variable, and it is not written in
+  // README.md either. `tests/admin-hash.test.js` keeps this hash and the
+  // ADMIN_PASSWORD value in sync, so a mismatch fails the check instead of
+  // silently locking the owner out of their own panel.
   const PASS_HASH = "1ac0670f9d19fccfead8b605f341acee495d21cd814ac905a646dd6e9fb5e35a";
 
   const STORAGE_KEY = "shop_items";
@@ -13,6 +20,20 @@
   const SHOP_KEY = "shop_settings";
   const DEFAULT_ITEMS_URL = "../data/items.json";
   const DEFAULT_SHOP_URL = "../data/shop.json";
+  // Fallback timezone if the shop record has none. The app's hours logic
+  // evaluates "open now" in the shop's own timezone, not the visitor's.
+  const DEFAULT_TIMEZONE = "Asia/Kolkata";
+
+  // Returns the timezone string if it is a valid IANA zone, else null.
+  function validTimezone(tz) {
+    if (!tz) return null;
+    try {
+      new Intl.DateTimeFormat("en-US", { timeZone: tz });
+      return tz;
+    } catch (err) {
+      return null;
+    }
+  }
 
   // --- Minimal SHA-256 (UTF-8 aware). Verified against Node's crypto. ---
   function sha256(str) {
@@ -328,6 +349,12 @@
     document.getElementById("editImage").value = item.image;
     document.getElementById("editAiGen").checked = !!item.aiGenerated;
     document.getElementById("editSpecial").checked = !!item.isSpecial;
+    // `veg` is a tri-state on the wire: undefined (not marked),
+    // true (vegetarian) or false (non-vegetarian). The app only renders a
+    // marker for an explicit boolean, so "not marked" must stay undefined
+    // rather than collapsing to false.
+    document.getElementById("editVeg").value =
+      item.veg === true ? "true" : item.veg === false ? "false" : "";
 
     editDialog.showModal();
   }
@@ -347,6 +374,8 @@
     const image = document.getElementById("editImage").value.trim() || "assets/new.svg";
     const aiGenerated = document.getElementById("editAiGen").checked;
     const isSpecial = document.getElementById("editSpecial").checked;
+    const vegRaw = document.getElementById("editVeg").value;
+    const veg = vegRaw === "" ? undefined : vegRaw === "true";
 
     const id = isNew
       ? name.toLowerCase().replace(/[^a-z0-9]+/g, "-") + "-" + Date.now().toString(36)
@@ -367,6 +396,10 @@
       updatedAt: new Date().toISOString()
     };
     if (isSpecial) updated.isSpecial = true;
+    // Only write `veg` when it is explicitly set. An undefined value is
+    // omitted entirely so that "Not marked" removes the key instead of
+    // persisting `null` or `false`.
+    if (veg !== undefined) updated.veg = veg;
 
     if (isNew) {
       items.push(updated);
@@ -380,6 +413,11 @@
       if (old.name !== name) changes.push("name");
       if (old.nameHi !== nameHi) changes.push("nameHi");
       if (!!old.isSpecial !== isSpecial) changes.push("special " + isSpecial);
+      // Compare the tri-state by name, not by truthiness: `false` (non-veg)
+      // and "not marked" are different values, not the same false.
+      const oldDiet = old.veg === true ? "veg" : old.veg === false ? "non-veg" : "none";
+      const newDiet = veg === true ? "veg" : veg === false ? "non-veg" : "none";
+      if (oldDiet !== newDiet) changes.push("diet " + newDiet);
       items[idx] = updated;
       logAction("EDIT", name + " [" + (changes.join(", ") || "updated") + "]");
     }
@@ -437,16 +475,27 @@
     document.getElementById("shopOpen").value = (shop.hours && shop.hours.open) || "";
     document.getElementById("shopClose").value = (shop.hours && shop.hours.close) || "";
     document.getElementById("shopDays").value = (shop.hours && shop.hours.days) || "";
+    document.getElementById("shopTimezone").value = shop.timezone || DEFAULT_TIMEZONE;
   }
 
   shopForm.addEventListener("submit", function (e) {
     e.preventDefault();
     const whatsapp = document.getElementById("shopWhatsapp").value.replace(/\D/g, "");
+    const tzInput = document.getElementById("shopTimezone").value.trim();
+    const tz = validTimezone(tzInput);
+    if (!tz) {
+      shopSaved.textContent = "Invalid timezone — use an IANA name like Asia/Kolkata";
+      shopSaved.classList.add("is-error");
+      document.getElementById("shopTimezone").focus();
+      return;
+    }
+    shopSaved.classList.remove("is-error");
     shop = shop || {};
     shop.name = document.getElementById("shopName").value.trim();
     shop.whatsapp = whatsapp;
     shop.address = document.getElementById("shopAddressField").value.trim();
     shop.mapsUrl = document.getElementById("shopMapsUrl").value.trim();
+    shop.timezone = tz;
     shop.hours = {
       open: document.getElementById("shopOpen").value,
       close: document.getElementById("shopClose").value,

@@ -1,19 +1,77 @@
+/* ==========================================================================
+   Demo Sweet Shop — app stylesheet
+
+   This is an app shell, not a brochure. The layout rules that make it feel
+   native:
+     - fixed app header with a blurred backdrop
+     - fixed bottom tab bar with safe-area padding
+     - views scroll under both, with padding to clear them
+     - content sits in a scrolling pane, the chrome does not move
+   ========================================================================== */
+
 :root {
   --clr-bg: #fdf6ec;
+  --clr-bg-2: #f7ece0;
   --clr-card: #fffdf8;
   --clr-text: #2c1810;
   --clr-accent: #b44a1e;
-  --clr-muted: #7a6555;
-  --clr-oos: #c0392b;
+  --clr-accent-ink: #fffaf5;
+  --clr-muted: #6f5a4a;
+  --clr-oos: #b8341f;
+  /* Ink used ON TOP of a solid --clr-oos fill (the out-of-stock badge).
+     White on the light-mode #b8341f is 5.92:1, but white on the dark-mode
+     #e8705f is only 3.04:1, so the dark scheme needs dark ink instead. */
+  --clr-oos-ink: #fff;
   --clr-border: #e8ddd0;
-  --clr-error: #c0392b;
-  --radius-card: 6px;
+  /* Border on interactive controls (search input, filter chips, stepper
+     buttons). WCAG 1.4.11 requires 3:1 for the boundary of a control, so
+     this is darker than the purely decorative --clr-border. */
+  --clr-border-2: #9e8369;
+  --clr-error: #b8341f;
+  --clr-success: #186a41;
+  --clr-wa: #25d366;
+  --clr-veg: #186a41;
+  --clr-non-veg: #b8341f;
+
+  /* The app shell width. On a phone this is the full screen; on a desktop
+     the header, the scrolling view and the tab bar all stop here so the
+     chrome stays aligned with the content instead of stretching edge to
+     edge. */
+  --shell-w: 720px;
+
+  --radius-card: 14px;
+  --radius-sm: 9px;
+  --radius-pill: 999px;
+
   --space-xs: 4px;
   --space-sm: 8px;
   --space-md: 16px;
   --space-lg: 24px;
+  --space-xl: 32px;
+
   --font-display: "Georgia", "Noto Serif Devanagari", serif;
-  --font-body: "Segoe UI", "Noto Sans Devanagari", sans-serif;
+  --font-body: "Segoe UI", "Noto Sans Devanagari", system-ui, sans-serif;
+
+  /* Chrome heights — the scroll pane is padded by these so content is
+     never trapped under the header or the tab bar. */
+  --header-h: 108px;
+  --tabbar-h: 60px;
+  --safe-b: env(safe-area-inset-bottom, 0px);
+  --safe-t: env(safe-area-inset-top, 0px);
+
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+
+  /* Motion durations live in variables so the reduced-motion block can
+     neutralise them by changing one value, with no !important needed. */
+  --dur-fast: 0.15s;
+  --dur-med: 0.18s;
+  --dur-slow: 0.22s;
+  --dur-sheet: 0.26s;
+  --dur-toast: 0.24s;
+  --dur-skeleton: 1.4s;
+  --shadow-card: 0 1px 2px rgb(44 24 16 / 6%), 0 4px 14px rgb(44 24 16 / 5%);
+  --shadow-raised: 0 8px 28px rgb(44 24 16 / 14%);
+
   --noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
 }
 
@@ -23,74 +81,319 @@
   box-sizing: border-box;
 }
 
+html {
+  text-size-adjust: 100%;
+}
+
 body {
   font-family: var(--font-body);
   background: var(--noise), var(--clr-bg);
   color: var(--clr-text);
   min-height: 100dvh;
-  display: flex;
-  flex-direction: column;
+  line-height: 1.55;
+  /* The tab bar is fixed; the body must not scroll independently of it. */
+  overflow-x: hidden;
 }
 
-/* --- Header --- */
+/* --- Accessibility helpers --- */
 
-.shop-header {
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  /* clip-path replaces the deprecated `clip` shorthand. */
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 200;
+  background: var(--clr-accent);
+  color: var(--clr-accent-ink);
+  /* display:inline-flex + min-height keeps the visible target at 44px. */
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: var(--space-sm) var(--space-md);
+  border-radius: 0 0 var(--radius-sm) 0;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.skip-link:focus {
+  left: 0;
+}
+
+:focus-visible {
+  outline: 2px solid var(--clr-accent);
+  outline-offset: 2px;
+}
+
+/* ==========================================================================
+   App header
+   ========================================================================== */
+
+.app-header {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 60;
+  padding: calc(var(--space-sm) + var(--safe-t)) var(--space-md) var(--space-sm);
+  background: color-mix(in srgb, var(--clr-bg) 86%, transparent);
+  backdrop-filter: blur(14px) saturate(1.4);
+  border-bottom: 1px solid var(--clr-border);
+}
+
+/* The header row is centred on the same content column as the scrolling
+   view, so the shop name lines up with the menu cards instead of drifting
+   to the far left of a wide desktop window. On a phone the column is
+   narrower than the screen, so this resolves to the full width. */
+.app-header-row,
+.app-header-sub {
+  width: min(100%, calc(var(--shell-w) - var(--space-md) * 2));
+  margin-inline: auto;
+}
+
+.app-header-row {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
-  padding: var(--space-lg) var(--space-md);
-  border-bottom: 2px solid var(--clr-accent);
+  gap: var(--space-md);
 }
 
 .shop-title {
   font-family: var(--font-display);
-  font-size: 1.6rem;
+  font-size: 1.35rem;
   font-weight: 700;
   letter-spacing: -0.02em;
+  line-height: 1.2;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .lang-btn {
   font: inherit;
   font-size: 0.85rem;
-  padding: var(--space-xs) var(--space-sm);
-  border: 1px solid var(--clr-accent);
-  border-radius: 3px;
-  background: transparent;
+  font-weight: 600;
+  flex-shrink: 0;
+  min-height: 44px;
+  padding: var(--space-xs) var(--space-md);
+  border: 1px solid var(--clr-border-2);
+  border-radius: var(--radius-pill);
+  background: var(--clr-card);
   color: var(--clr-accent);
   cursor: pointer;
+  transition:
+    background var(--dur-fast) var(--ease),
+    color var(--dur-fast) var(--ease),
+    border-color var(--dur-fast) var(--ease);
 }
 
-.lang-btn:hover,
-.lang-btn:focus-visible {
+.lang-btn:hover {
   background: var(--clr-accent);
-  color: #fff;
+  border-color: var(--clr-accent);
+  color: var(--clr-accent-ink);
+}
+
+.app-header-sub {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-top: var(--space-xs);
+  min-height: 22px;
+}
+
+.header-sub-text {
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--clr-muted);
+}
+
+/* --- Status pill (open / closed) --- */
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: var(--radius-pill);
+  letter-spacing: 0.02em;
+}
+
+.status-pill::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentcolor;
+}
+
+.status-open {
+  background: color-mix(in srgb, var(--clr-success) 14%, transparent);
+  color: var(--clr-success);
+}
+
+.status-closed {
+  background: color-mix(in srgb, var(--clr-oos) 12%, transparent);
+  color: var(--clr-oos);
+}
+
+.status-unknown {
+  background: var(--clr-bg-2);
+  color: var(--clr-muted);
+}
+
+/* --- Offline banner --- */
+.offline-banner {
+  position: fixed;
+  top: calc(var(--header-h) + var(--safe-t));
+  inset-inline: 0;
+  z-index: 55;
+  background: var(--clr-oos);
+  color: var(--clr-oos-ink);
+  text-align: center;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: var(--space-xs) var(--space-md);
+}
+
+/* ==========================================================================
+   Views
+   ========================================================================== */
+
+.app-view {
+  padding: calc(var(--header-h) + var(--safe-t) + var(--space-sm)) var(--space-md)
+    calc(var(--tabbar-h) + var(--safe-b) + var(--space-xl));
+  max-width: var(--shell-w);
+  margin-inline: auto;
+}
+
+.app-view[hidden] {
+  display: none;
+}
+
+.view-title {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: var(--space-md);
+}
+
+.view-title:focus {
   outline: none;
 }
 
-/* --- Filter bar --- */
+/* ==========================================================================
+   Search
+   ========================================================================== */
+
+.search-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin-bottom: var(--space-md);
+}
+
+.search-icon {
+  position: absolute;
+  left: 14px;
+  color: var(--clr-muted);
+  pointer-events: none;
+}
+
+.search-input {
+  font: inherit;
+  width: 100%;
+  min-height: 46px;
+  padding: 0 44px 0 42px;
+  border: 1px solid var(--clr-border-2);
+  border-radius: var(--radius-pill);
+  background: var(--clr-card);
+  color: var(--clr-text);
+  appearance: none;
+}
+
+.search-input::placeholder {
+  color: var(--clr-muted);
+}
+
+.search-input:focus {
+  outline: 2px solid var(--clr-accent);
+  outline-offset: 1px;
+  border-color: var(--clr-accent);
+}
+
+/* Hide the native clear affordance; the button below does the same job. */
+.search-input::-webkit-search-cancel-button {
+  display: none;
+}
+
+.search-clear {
+  position: absolute;
+  right: 4px;
+  display: grid;
+  place-items: center;
+  /* The glyph is 18px, but the hit area is a full 44px target so the
+     button is comfortably tappable on a phone. */
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--clr-muted);
+  cursor: pointer;
+}
+
+.search-clear:hover {
+  background: var(--clr-bg-2);
+  color: var(--clr-text);
+}
+
+/* ==========================================================================
+   Filters
+   ========================================================================== */
 
 .filter-bar {
   display: flex;
   gap: var(--space-sm);
-  padding: var(--space-md) var(--space-md) 0;
-  max-width: 960px;
-  margin-inline: auto;
-  width: 100%;
+  margin-bottom: var(--space-md);
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-bottom: 2px;
+}
+
+.filter-bar::-webkit-scrollbar {
+  display: none;
 }
 
 .filter-btn {
   font: inherit;
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   font-weight: 600;
+  flex-shrink: 0;
+  min-height: 44px;
   padding: var(--space-xs) var(--space-md);
-  border: 1px solid var(--clr-border);
-  border-radius: 3px;
-  background: transparent;
+  border: 1px solid var(--clr-border-2);
+  border-radius: var(--radius-pill);
+  background: var(--clr-card);
   color: var(--clr-muted);
   cursor: pointer;
   transition:
-    background 0.12s ease,
-    color 0.12s ease;
+    background var(--dur-fast) var(--ease),
+    color var(--dur-fast) var(--ease),
+    border-color var(--dur-fast) var(--ease);
 }
 
 .filter-btn:hover {
@@ -98,64 +401,154 @@ body {
   color: var(--clr-accent);
 }
 
-.filter-btn:focus-visible {
-  outline: 2px solid var(--clr-accent);
-  outline-offset: 1px;
-}
-
 .filter-btn.active {
   background: var(--clr-accent);
   border-color: var(--clr-accent);
-  color: #fff;
+  color: var(--clr-accent-ink);
 }
 
-/* --- Grid: desktop = 3-col asymmetric --- */
+/* ==========================================================================
+   Special banner
+   ========================================================================== */
+
+.special-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-md);
+  padding: var(--space-sm) var(--space-md);
+  background: var(--clr-card);
+  border: 1px solid var(--clr-border);
+  border-radius: var(--radius-card);
+}
+
+.special-badge {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  background: var(--clr-accent);
+  color: var(--clr-accent-ink);
+  padding: 3px 9px;
+  border-radius: var(--radius-pill);
+}
+
+.special-name {
+  font-family: var(--font-display);
+  font-size: 0.98rem;
+  font-weight: 600;
+}
+
+/* ==========================================================================
+   Menu grid + cards
+   ========================================================================== */
 
 .menu-grid {
-  flex: 1;
   display: grid;
-  grid-template-columns: 1fr 1.2fr 1fr;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
   gap: var(--space-md);
-  padding: var(--space-lg) var(--space-md);
-  max-width: 960px;
-  margin-inline: auto;
-  width: 100%;
 }
-
-/* --- Cards --- */
 
 .item-card {
   background: var(--clr-card);
   border-radius: var(--radius-card);
   border: 1px solid var(--clr-border);
+  box-shadow: var(--shadow-card);
   overflow: hidden;
   display: flex;
   flex-direction: column;
   transition:
-    transform 0.15s ease,
-    border-color 0.15s ease;
+    transform var(--dur-med) var(--ease),
+    box-shadow var(--dur-med) var(--ease),
+    border-color var(--dur-med) var(--ease);
 }
 
-/* Cards are browse-only (not interactive), so they are deliberately
-   NOT focusable — a focus target that does nothing is an a11y trap.
-   They lift on hover/when a child gains focus. */
+.item-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-raised);
+  border-color: var(--clr-border-2);
+}
 
-.item-card:hover,
-.item-card:focus-within {
-  transform: translateY(-2px);
-  border-color: var(--clr-accent);
+.card-media {
+  position: relative;
+  background: var(--clr-bg-2);
 }
 
 .item-card img {
   width: 100%;
   aspect-ratio: 4 / 3;
+  /* The height attribute on the <img> maps to a presentational hint that
+     beats aspect-ratio, so the card image would render at its natural
+     640x480 and blow the card height up. height:auto lets the ratio win. */
+  height: auto;
   object-fit: cover;
   display: block;
-  background: #eee;
+}
+
+.item-card.oos img {
+  filter: grayscale(0.7);
+  opacity: 60%;
+}
+
+.item-card.oos {
+  border-color: var(--clr-border);
+}
+
+.oos-label {
+  position: absolute;
+  left: var(--space-sm);
+  top: var(--space-sm);
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--clr-oos-ink);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: var(--clr-oos);
+  padding: 3px 9px;
+  border-radius: var(--radius-pill);
+}
+
+/* --- Veg / non-veg marker ---
+   The Indian convention: a green square for vegetarian, red for
+   non-vegetarian. Rendered as a bordered square with a dot so it stays
+   legible at small sizes and never relies on colour alone. */
+.diet-marker {
+  display: inline-grid;
+  place-items: center;
+  width: 13px;
+  height: 13px;
+  border: 1.5px solid var(--clr-veg);
+  border-radius: 2px;
+  color: var(--clr-veg);
+  vertical-align: 2px;
+  margin-left: 6px;
+  flex-shrink: 0;
+}
+
+.diet-marker.non-veg {
+  border-color: var(--clr-non-veg);
+  color: var(--clr-non-veg);
+}
+
+/* The aiGenerated flag is a factual claim about the image source, so it is
+   always visible rather than hidden. See README. */
+.ai-badge {
+  position: absolute;
+  right: var(--space-sm);
+  top: var(--space-sm);
+  font-size: 0.64rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--clr-text);
+  background: color-mix(in srgb, var(--clr-card) 92%, transparent);
+  border: 1px solid var(--clr-border-2);
+  padding: 3px 7px;
+  border-radius: var(--radius-sm);
 }
 
 .card-body {
-  padding: var(--space-sm) var(--space-md);
+  padding: var(--space-md);
   display: flex;
   flex-direction: column;
   gap: var(--space-xs);
@@ -166,59 +559,160 @@ body {
   font-family: var(--font-display);
   font-size: 1.05rem;
   font-weight: 600;
+  line-height: 1.25;
 }
 
 .item-meta {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: auto;
+  align-items: baseline;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
 }
 
 .item-price {
   font-weight: 700;
   color: var(--clr-accent);
+  font-size: 1rem;
 }
 
 .item-qty {
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   color: var(--clr-muted);
 }
 
-/* --- Out of stock: desaturate + dim --- */
-
-.item-card.oos img {
-  filter: grayscale(0.6);
-  opacity: 70%;
+.card-actions {
+  display: flex;
+  gap: var(--space-sm);
+  margin-top: auto;
+  padding-top: var(--space-sm);
 }
 
-.item-card.oos {
-  border-color: #ddd;
-}
+/* ==========================================================================
+   Buttons
+   ========================================================================== */
 
-.oos-label {
-  font-size: 0.8rem;
+.btn-primary,
+.btn-outline,
+.btn-ghost {
+  font: inherit;
+  font-size: 0.85rem;
   font-weight: 600;
-  color: var(--clr-oos);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-xs);
+  min-height: 44px;
+  padding: var(--space-xs) var(--space-md);
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  text-decoration: none;
+  transition:
+    background var(--dur-fast) var(--ease),
+    color var(--dur-fast) var(--ease),
+    border-color var(--dur-fast) var(--ease),
+    transform var(--dur-fast) var(--ease);
 }
 
-/* --- Skeleton loading --- */
+.btn-primary {
+  background: var(--clr-accent);
+  border: 1px solid var(--clr-accent);
+  color: var(--clr-accent-ink);
+}
+
+/* The disabled state is declared before the hover state so the more
+   specific hover rule can never win over a disabled button. */
+.btn-primary.is-disabled,
+.btn-primary:disabled {
+  background: var(--clr-border);
+  border-color: var(--clr-border);
+  color: var(--clr-muted);
+  cursor: not-allowed;
+  transform: none;
+  filter: none;
+}
+
+.btn-primary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  filter: brightness(1.06);
+}
+
+.btn-outline {
+  background: transparent;
+  border: 1px solid var(--clr-accent);
+  color: var(--clr-accent);
+}
+
+.btn-outline:hover {
+  background: var(--clr-accent);
+  color: var(--clr-accent-ink);
+}
+
+.btn-ghost {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--clr-muted);
+}
+
+.btn-ghost:hover {
+  background: var(--clr-bg-2);
+  color: var(--clr-text);
+}
+
+/* The small variant is still a full 44px tap target — it is smaller in
+   type and padding, not in hit area. */
+.btn-sm {
+  min-height: 44px;
+  font-size: 0.8rem;
+  padding: var(--space-xs) var(--space-md);
+  flex: 1;
+}
+
+.btn-block {
+  display: flex;
+  width: 100%;
+}
+
+/* ==========================================================================
+   Empty states
+   ========================================================================== */
+
+.empty-state {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: var(--space-xl) var(--space-md);
+  background: var(--clr-card);
+  border: 1px dashed var(--clr-border-2);
+  border-radius: var(--radius-card);
+}
+
+.empty-state h3 {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  margin-bottom: var(--space-xs);
+}
+
+.empty-state p {
+  color: var(--clr-muted);
+  font-size: 0.9rem;
+  margin-bottom: var(--space-md);
+}
+
+/* The empty-state CTA is centred by `text-align: center` on .empty-state.
+   It stays inline-flex so it shrink-wraps its label rather than stretching
+   to the full width of the empty-state card. */
+
+/* ==========================================================================
+   Skeleton
+   ========================================================================== */
 
 .skeleton-card {
   border-radius: var(--radius-card);
   border: 1px solid var(--clr-border);
   overflow: hidden;
-  aspect-ratio: 4 / 3.5;
-  background: linear-gradient(
-    90deg,
-    var(--clr-border) 25%,
-    var(--clr-card) 50%,
-    var(--clr-border) 75%
-  );
+  aspect-ratio: 4 / 5;
+  background: linear-gradient(90deg, var(--clr-bg-2) 25%, var(--clr-card) 50%, var(--clr-bg-2) 75%);
   background-size: 200% 100%;
-  animation: skeleton-pulse 1.4s ease-in-out infinite;
+  animation: skeleton-pulse var(--dur-skeleton) ease-in-out infinite;
 }
 
 @keyframes skeleton-pulse {
@@ -231,150 +725,210 @@ body {
   }
 }
 
-/* --- Card keyboard focus (only if a card ever becomes interactive) --- */
+/* ==========================================================================
+   Cart
+   ========================================================================== */
 
-.item-card:focus-visible {
-  outline: 2px solid var(--clr-accent);
-  outline-offset: 2px;
+.cart-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-md);
 }
 
-/* --- Error / loading / noscript --- */
-
-.menu-error {
-  grid-column: 1 / -1;
-  color: var(--clr-error);
-  font-size: 0.9rem;
-  padding: var(--space-md);
-  text-align: center;
-}
-
-.noscript-msg {
-  grid-column: 1 / -1;
-  color: var(--clr-muted);
-  font-size: 0.9rem;
-  padding: var(--space-md);
-  text-align: center;
-}
-
-/* --- Footer --- */
-
-.shop-footer {
-  text-align: center;
-  padding: var(--space-md);
-  font-size: 0.8rem;
-  color: var(--clr-muted);
-  border-top: 1px solid var(--clr-border);
-}
-
-/* --- Mobile: horizontal cards, reordered meta, dominant price --- */
-
-@media (width <= 600px) {
-  .menu-grid {
-    grid-template-columns: 1fr;
-    padding: var(--space-md);
-    gap: var(--space-sm);
-  }
-
-  .item-card {
-    flex-direction: row;
-    align-items: stretch;
-  }
-
-  .item-card img {
-    width: 96px;
-    min-height: 96px;
-    aspect-ratio: 1;
-    border-radius: var(--radius-card) 0 0 var(--radius-card);
-  }
-
-  .card-body {
-    flex-flow: row wrap;
-    align-items: center;
-    gap: var(--space-xs) var(--space-sm);
-  }
-
-  .item-name {
-    flex: 1 1 100%;
-    font-size: 0.95rem;
-  }
-
-  .item-meta {
-    flex: 1 1 100%;
-    justify-content: flex-start;
-    gap: var(--space-md);
-  }
-
-  .item-price {
-    order: 1;
-    font-size: 1rem;
-  }
-
-  .item-qty {
-    order: 2;
-  }
-
-  .oos-label {
-    order: 3;
-  }
-}
-
-/* --- Motion preference: disable hover lift --- */
-
-@media (prefers-reduced-motion: reduce) {
-  .item-card,
-  .lang-btn,
-  .filter-btn {
-    transition: none;
-  }
-
-  .item-card:hover,
-  .item-card:focus-within {
-    transform: none;
-  }
-}
-
-/* --- Special banner --- */
-
-.special-banner {
+.cart-row {
   display: flex;
   align-items: center;
-  gap: var(--space-sm);
-  max-width: 960px;
-  margin-inline: auto;
-  width: 100%;
+  gap: var(--space-md);
+  background: var(--clr-card);
+  border: 1px solid var(--clr-border);
+  border-radius: var(--radius-card);
   padding: var(--space-sm) var(--space-md);
 }
 
-.special-badge {
-  font-size: 0.7rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  background: var(--clr-accent);
-  color: #fff;
-  padding: var(--space-xs) var(--space-sm);
-  border-radius: 3px;
+.cart-img {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+  flex-shrink: 0;
+  background: var(--clr-bg-2);
 }
 
-.special-name {
+.cart-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.cart-name {
   font-family: var(--font-display);
-  font-size: 1rem;
+  font-weight: 600;
+  font-size: 0.98rem;
+  line-height: 1.25;
+}
+
+.cart-price {
+  font-size: 0.82rem;
+  color: var(--clr-accent);
   font-weight: 600;
 }
 
-/* --- Testimonials --- */
-
-.testimonials-section {
-  max-width: 960px;
-  margin-inline: auto;
-  width: 100%;
-  padding: var(--space-lg) var(--space-md);
+.stepper {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  flex-shrink: 0;
 }
 
-.testimonials-title {
+.step-btn {
+  /* 44px hit target, same as every other control. */
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  font-size: 1.15rem;
+  line-height: 1;
+  border: 1px solid var(--clr-border-2);
+  border-radius: 50%;
+  background: var(--clr-card);
+  color: var(--clr-accent);
+  cursor: pointer;
+  transition:
+    background var(--dur-fast) var(--ease),
+    color var(--dur-fast) var(--ease);
+}
+
+.step-btn:hover {
+  background: var(--clr-accent);
+  border-color: var(--clr-accent);
+  color: var(--clr-accent-ink);
+}
+
+.step-qty {
+  min-width: 24px;
+  text-align: center;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.cart-summary {
+  background: var(--clr-card);
+  border: 1px solid var(--clr-border);
+  border-radius: var(--radius-card);
+  padding: var(--space-md);
+  position: sticky;
+  bottom: calc(var(--tabbar-h) + var(--safe-b) + var(--space-sm));
+  box-shadow: var(--shadow-card);
+}
+
+.cart-summary-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: var(--space-xs) 0;
+  font-size: 0.88rem;
+  color: var(--clr-muted);
+}
+
+.cart-summary-total {
+  font-size: 1.05rem;
+  color: var(--clr-text);
+  font-weight: 700;
+  padding-bottom: var(--space-sm);
+  margin-bottom: var(--space-sm);
+  border-bottom: 1px solid var(--clr-border);
+}
+
+.cart-summary-value {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--clr-accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.cart-note {
+  font-size: 0.74rem;
+  color: var(--clr-muted);
+  text-align: center;
+  margin-top: var(--space-sm);
+}
+
+/* ==========================================================================
+   Visit + More
+   ========================================================================== */
+
+.visit-card {
+  background: var(--clr-card);
+  border: 1px solid var(--clr-border);
+  border-radius: var(--radius-card);
+  padding: var(--space-lg);
+  box-shadow: var(--shadow-card);
+}
+
+.visit-row {
+  font-size: 0.92rem;
+  margin-top: var(--space-sm);
+}
+
+.visit-muted {
+  color: var(--clr-muted);
+  font-size: 0.82rem;
+}
+
+.visit-address {
+  font-size: 0.92rem;
+  margin-top: var(--space-md);
+  padding-top: var(--space-md);
+  border-top: 1px solid var(--clr-border);
+  color: var(--clr-muted);
+}
+
+.visit-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  margin-top: var(--space-lg);
+}
+
+.how-block {
+  margin-bottom: var(--space-lg);
+}
+
+.block-title {
   font-family: var(--font-display);
-  font-size: 1.1rem;
+  font-size: 1.15rem;
+  font-weight: 700;
   margin-bottom: var(--space-md);
+}
+
+.how-step {
+  display: flex;
+  gap: var(--space-md);
+  padding: var(--space-md);
+  background: var(--clr-card);
+  border: 1px solid var(--clr-border);
+  border-radius: var(--radius-card);
+  margin-bottom: var(--space-sm);
+}
+
+.how-num {
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--clr-accent);
+  line-height: 1.2;
+  flex-shrink: 0;
+}
+
+.how-step h4 {
+  font-size: 0.98rem;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.how-step p {
+  font-size: 0.85rem;
+  color: var(--clr-muted);
 }
 
 .testimonials-list {
@@ -402,144 +956,357 @@ body {
   font-style: normal;
 }
 
-/* --- Footer extras --- */
-
-.footer-hours,
-.footer-address {
-  margin-top: var(--space-xs);
-  font-size: 0.75rem;
+.more-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
 }
 
-.footer-directions {
-  display: inline-block;
-  margin-top: var(--space-xs);
-  font-size: 0.75rem;
-  color: var(--clr-accent);
-  text-decoration: none;
-  border-bottom: 1px solid var(--clr-accent);
+.install-hint {
+  font-size: 0.76rem;
+  color: var(--clr-muted);
+  text-align: center;
+  margin-top: calc(var(--space-xs) * -1);
 }
 
-.footer-directions:hover {
-  border-bottom-width: 2px;
+.footer-meta {
+  font-size: 0.72rem;
+  color: var(--clr-muted);
+  text-align: center;
+  opacity: 85%;
 }
 
-.btn-share {
+/* ==========================================================================
+   Bottom tab bar
+   ========================================================================== */
+
+.tabbar {
+  position: fixed;
+  inset: auto 0 0;
+  z-index: 70;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  background: color-mix(in srgb, var(--clr-bg) 92%, transparent);
+  backdrop-filter: blur(14px) saturate(1.4);
+  border-top: 1px solid var(--clr-border);
+  padding-bottom: var(--safe-b);
+  /* The bar itself spans the window (so the blur covers the full width),
+     but the buttons sit inside the same content column as the menu grid. */
+  padding-inline: max(0px, calc((100% - var(--shell-w)) / 2 + var(--space-md)));
+}
+
+.tab {
   font: inherit;
-  font-size: 0.75rem;
-  margin-top: var(--space-sm);
-  padding: var(--space-xs) var(--space-md);
-  border: 1px solid var(--clr-accent);
-  border-radius: 3px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  min-height: var(--tabbar-h);
+  padding: var(--space-xs) 4px;
+  border: 0;
   background: transparent;
+  color: var(--clr-muted);
+  font-size: 0.68rem;
+  font-weight: 600;
+  cursor: pointer;
+  position: relative;
+  transition: color var(--dur-fast) var(--ease);
+}
+
+.tab svg {
+  transition: transform var(--dur-med) var(--ease);
+}
+
+.tab.active {
   color: var(--clr-accent);
+}
+
+.tab.active svg {
+  transform: translateY(-1px) scale(1.06);
+}
+
+.cart-badge {
+  position: absolute;
+  top: 6px;
+  left: 50%;
+  margin-left: 6px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  display: grid;
+  place-items: center;
+  font-size: 0.66rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  /* The badge sits on the accent fill, so it takes the accent's ink —
+     not white, which is only 3.2:1 on the dark-mode accent. */
+  color: var(--clr-accent-ink);
+  background: var(--clr-accent);
+  border-radius: var(--radius-pill);
+  border: 2px solid var(--clr-bg);
+}
+
+/* ==========================================================================
+   Item detail sheet
+   ========================================================================== */
+
+.sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  background: rgb(44 24 16 / 45%);
+  backdrop-filter: blur(3px);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  opacity: 0%;
+  transition: opacity var(--dur-slow) var(--ease);
+}
+
+.sheet-backdrop.open {
+  opacity: 100%;
+}
+
+.sheet-backdrop[hidden] {
+  display: none;
+}
+
+.sheet-close-bar {
+  display: flex;
+  justify-content: flex-end;
+  padding: var(--space-sm) var(--space-md) 0;
+}
+
+.sheet-close {
+  /* 44px hit target — the visible disc stays 38px so the sheet does not
+     look heavy, but the tappable area meets the minimum. */
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: rgb(255 255 255 / 22%);
+  color: #fff;
   cursor: pointer;
 }
 
-.btn-share:hover {
-  background: var(--clr-accent);
-  color: #fff;
+.sheet-body {
+  background: var(--clr-card);
+  border-radius: var(--radius-card) var(--radius-card) 0 0;
+  padding: var(--space-md) var(--space-lg) calc(var(--space-xl) + var(--safe-b));
+  max-height: 82dvh;
+  overflow-y: auto;
+  transform: translateY(100%);
+  transition: transform var(--dur-sheet) var(--ease);
 }
 
-/* --- WhatsApp FAB --- */
+.sheet-backdrop.open .sheet-body {
+  transform: translateY(0);
+}
 
-.whatsapp-fab {
-  position: fixed;
-  bottom: var(--space-lg);
-  right: var(--space-lg);
+.sheet-img {
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  /* Same reason as .item-card img: the height attribute must not win. */
+  height: auto;
+  object-fit: cover;
+  border-radius: var(--radius-card);
+  background: var(--clr-bg-2);
+  margin-bottom: var(--space-md);
+}
+
+.sheet-title {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: var(--space-xs);
+}
+
+.sheet-price {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--clr-accent);
+  margin-bottom: var(--space-sm);
+}
+
+.sheet-tags {
   display: flex;
-  align-items: center;
-  gap: var(--space-sm);
-  background: #25d366;
-  color: #fff;
-  padding: var(--space-sm) var(--space-md);
-  border-radius: 28px;
-  text-decoration: none;
-  font-size: 0.8rem;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+  list-style: none;
+  margin-bottom: var(--space-md);
+}
+
+.sheet-tags li {
+  font-size: 0.72rem;
+  padding: 3px 10px;
+  border-radius: var(--radius-pill);
+  background: var(--clr-bg-2);
+  color: var(--clr-muted);
+}
+
+.sheet-note {
+  font-size: 0.75rem;
+  color: var(--clr-muted);
+  margin-bottom: var(--space-md);
+}
+
+body.sheet-open {
+  overflow: hidden;
+}
+
+/* ==========================================================================
+   Toast
+   ========================================================================== */
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--tabbar-h) + var(--safe-b) + var(--space-md));
+  transform: translate(-50%, 140%);
+  z-index: 95;
+  max-width: min(420px, calc(100vw - 32px));
+  background: #2c1810;
+  color: #fdf6ec;
+  font-size: 0.88rem;
   font-weight: 600;
-  box-shadow: 0 4px 12px rgb(0 0 0 / 20%);
-  transition: transform 0.15s ease;
-  z-index: 100;
+  padding: var(--space-sm) var(--space-lg);
+  border-radius: var(--radius-pill);
+  box-shadow: var(--shadow-raised);
+  opacity: 0%;
+  transition:
+    transform var(--dur-toast) var(--ease),
+    opacity var(--dur-toast) var(--ease);
+  pointer-events: none;
+  text-align: center;
 }
 
-.whatsapp-fab:hover {
-  transform: scale(1.05);
+.toast.show {
+  transform: translate(-50%, 0);
+  opacity: 100%;
 }
 
-.whatsapp-fab svg {
-  flex-shrink: 0;
+.toast[hidden] {
+  display: none;
 }
 
-@media (width <= 600px) {
-  .whatsapp-fab-text {
-    display: none;
+/* ==========================================================================
+   Errors
+   ========================================================================== */
+
+.menu-error {
+  grid-column: 1 / -1;
+  color: var(--clr-error);
+  font-size: 0.9rem;
+  padding: var(--space-lg);
+  text-align: center;
+}
+
+.noscript-msg {
+  grid-column: 1 / -1;
+  color: var(--clr-muted);
+  font-size: 0.9rem;
+  padding: var(--space-lg);
+  text-align: center;
+}
+
+/* ==========================================================================
+   Motion preference
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  /* Every duration collapses to a single token value, so no declaration
+     anywhere needs !important to be overridden. */
+  :root {
+    --dur-fast: 0.01ms;
+    --dur-med: 0.01ms;
+    --dur-slow: 0.01ms;
+    --dur-sheet: 0.01ms;
+    --dur-toast: 0.01ms;
+    --dur-skeleton: 0.01ms;
   }
 
-  .whatsapp-fab {
-    padding: var(--space-sm);
-    border-radius: 50%;
+  html {
+    scroll-behavior: auto;
+  }
+
+  .skeleton-card {
+    animation: none;
+  }
+
+  .item-card:hover,
+  .btn-primary:hover:not(:disabled) {
+    transform: none;
+  }
+
+  .sheet-body {
+    transform: none;
+  }
+
+  .tab svg {
+    transform: none;
   }
 }
 
-/* --- Footer meta --- */
-
-.footer-meta {
-  margin-top: var(--space-xs);
-  font-size: 0.7rem;
-  opacity: 70%;
-}
-
-/* --- Dark mode --- */
+/* ==========================================================================
+   Dark mode
+   ========================================================================== */
 
 @media (prefers-color-scheme: dark) {
   :root {
     --clr-bg: #1a1209;
+    --clr-bg-2: #241a10;
     --clr-card: #241a10;
     --clr-text: #f0e6d8;
     --clr-accent: #e07040;
-    --clr-muted: #a08a70;
+    --clr-accent-ink: #1a1209;
+    /* Lightened from the light-mode value: #6f5a4a fails on a dark
+       surface. #bda895 is 7.48:1 on --clr-card and 8.11:1 on --clr-bg. */
+    --clr-muted: #bda895;
+    --clr-oos: #e8705f;
+    /* Dark ink on the lightened dark-mode red: 6.09:1, where white would
+       only reach 3.04:1. */
+    --clr-oos-ink: #1a1209;
     --clr-border: #3d2e1e;
-    --clr-error: #e05040;
-    --clr-oos: #e05040;
+    --clr-border-2: #86684a;
+    --clr-error: #e8705f;
+    --clr-success: #4cc38a;
+    --clr-veg: #4cc38a;
+    --clr-non-veg: #e8705f;
+    --shadow-card: 0 1px 2px rgb(0 0 0 / 30%), 0 4px 14px rgb(0 0 0 / 22%);
+    --shadow-raised: 0 8px 28px rgb(0 0 0 / 40%);
   }
 
-  .lang-btn:hover,
-  .lang-btn:focus-visible {
+  .toast {
+    background: #f0e6d8;
     color: #1a1209;
   }
 
-  .filter-btn.active {
-    color: #1a1209;
+  .sheet-close {
+    background: rgb(0 0 0 / 30%);
   }
 
-  .item-card img {
-    background: #2a2015;
-  }
-
-  .skeleton-card {
-    background: linear-gradient(
-      90deg,
-      var(--clr-border) 25%,
-      var(--clr-card) 50%,
-      var(--clr-border) 75%
-    );
-    background-size: 200% 100%;
+  .cart-badge {
+    border-color: var(--clr-bg);
   }
 }
 
-/* --- Print stylesheet --- */
+/* ==========================================================================
+   Print — a menu is still useful on paper
+   ========================================================================== */
 
 @media print {
-  .shop-header {
-    border-bottom: 1px solid #000;
-    padding: 8px 0;
-  }
-
-  .lang-btn,
+  .app-header,
+  .tabbar,
+  .search-wrap,
   .filter-bar,
-  .shop-footer,
-  .whatsapp-fab,
-  .testimonials-section,
-  .btn-share {
+  .cart-summary,
+  .toast:not([hidden]),
+  .sheet-backdrop:not([hidden]),
+  .more-actions {
     display: none;
   }
 
@@ -547,20 +1314,20 @@ body {
     background: #fff;
   }
 
+  .app-view {
+    padding: 0;
+    max-width: none;
+  }
+
   .menu-grid {
     grid-template-columns: 1fr 1fr;
     gap: 8px;
-    padding: 8px 0;
   }
 
   .item-card {
     break-inside: avoid;
     border: 1px solid #ccc;
     box-shadow: none;
-    transform: none;
-  }
-
-  .item-card:hover {
     transform: none;
   }
 
@@ -571,6 +1338,5 @@ body {
 
   .oos-label {
     color: #000;
-    font-weight: 700;
   }
 }

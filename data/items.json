@@ -9,7 +9,11 @@
     "unit": "pc",
     "qty": 48,
     "category": "sweet",
-    "tags": ["sweet", "bengali"],
+    "tags": [
+      "sweet",
+      "bengali"
+    ],
+    "veg": true,
     "aiGenerated": false,
     "updatedAt": "2026-10-15T12:00:00Z"
   },
@@ -23,7 +27,11 @@
     "unit": "pc",
     "qty": 24,
     "category": "sweet",
-    "tags": ["sweet", "bengali"],
+    "tags": [
+      "sweet",
+      "bengali"
+    ],
+    "veg": true,
     "aiGenerated": false,
     "updatedAt": "2026-10-15T12:00:00Z"
   },
@@ -37,7 +45,10 @@
     "unit": "pc",
     "qty": 60,
     "category": "snack",
-    "tags": ["snack", "fried"],
+    "tags": [
+      "snack",
+      "fried"
+    ],
     "aiGenerated": false,
     "updatedAt": "2026-10-15T12:00:00Z"
   },
@@ -51,7 +62,11 @@
     "unit": "plate",
     "qty": 0,
     "category": "snack",
-    "tags": ["bihari", "roasted"],
+    "tags": [
+      "bihari",
+      "roasted"
+    ],
+    "veg": true,
     "aiGenerated": false,
     "updatedAt": "2026-10-15T12:00:00Z"
   },
@@ -65,7 +80,11 @@
     "unit": "plate",
     "qty": 35,
     "category": "snack",
-    "tags": ["snack", "tangy"],
+    "tags": [
+      "snack",
+      "tangy"
+    ],
+    "veg": true,
     "aiGenerated": false,
     "updatedAt": "2026-10-15T12:00:00Z"
   },
@@ -79,7 +98,11 @@
     "unit": "pc",
     "qty": 40,
     "category": "sweet",
-    "tags": ["sweet", "fried"],
+    "tags": [
+      "sweet",
+      "fried"
+    ],
+    "veg": true,
     "aiGenerated": true,
     "isSpecial": true,
     "updatedAt": "2026-10-15T12:00:00Z"

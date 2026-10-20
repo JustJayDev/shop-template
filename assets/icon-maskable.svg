@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="Demo Sweet Shop">
+<!-- Maskable variant: the artwork sits inside the 80% safe zone so a
+     circular or squircle launcher mask never clips the letter. -->
+  <rect width="512" height="512" fill="#b44a1e"/>
+  <circle cx="256" cy="256" r="132" fill="#fffaf5"/>
+  <text x="256" y="338" font-family="Georgia, 'Times New Roman', serif" font-size="196" font-weight="700" fill="#b44a1e" text-anchor="middle">D</text>
+</svg>

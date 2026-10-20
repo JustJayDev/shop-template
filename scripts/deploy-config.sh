@@ -50,5 +50,15 @@ EOF
 # keep .deploy.env in sync
 printf '# Demo Sweet Shop — deployment config.\n# Edit this, then run: bash scripts/deploy-config.sh\n# It rewrites the domain in sitemap.xml and robots.txt.\nSITE_URL=%s\n' "$SITE_URL" > .deploy.env
 
+# The absolute URLs in index.html must match the deployed domain, or a
+# shared link renders without a preview image. Rewrite them in place.
+if [ -f "$PROJECT_DIR/index.html" ]; then
+  sed -i \
+    -e "s|https://[A-Za-z0-9._-]*/shop-template/assets/share.png|${SITE_URL}/assets/share.png|g" \
+    -e "s|https://[A-Za-z0-9._-]*/shop-template/assets/share.png|${SITE_URL}/assets/share.png|g" \
+    -e "s|https://[A-Za-z0-9._-]*/shop-template/|${SITE_URL}/|g" \
+    "$PROJECT_DIR/index.html"
+fi
+
 echo "✅ sitemap.xml and robots.txt updated for: $SITE_URL"
-echo "   Remember: OG meta tags in index.html still reference relative asset paths."
+echo "   index.html absolute URLs (og:image, og:url, canonical) rewritten too."

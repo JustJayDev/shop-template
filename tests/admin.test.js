@@ -124,6 +124,45 @@ function makeStorage() {
   ok("shop save confirmed in UI", doc.getElementById("shopSaved").textContent.includes("Saved"));
   ok("shop change logged", w.localStorage.getItem("shop_history").includes("SHOP"));
 
+  console.log("\n=== TIMEZONE ===");
+  ok(
+    "timezone prefilled from shop.json",
+    doc.getElementById("shopTimezone").value === shop.timezone,
+    doc.getElementById("shopTimezone").value
+  );
+  // An invalid IANA zone must be rejected outright.
+  doc.getElementById("shopTimezone").value = "Not/AZone";
+  doc
+    .getElementById("shopForm")
+    .dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+  await tick();
+  ok(
+    "invalid timezone rejected",
+    doc.getElementById("shopSaved").textContent.includes("Invalid timezone"),
+    doc.getElementById("shopSaved").textContent
+  );
+  ok(
+    "invalid timezone not persisted",
+    !w.localStorage.getItem("shop_settings").includes("Not/AZone")
+  );
+  // A valid non-default zone must be accepted and stored.
+  doc.getElementById("shopTimezone").value = "Asia/Dubai";
+  doc
+    .getElementById("shopForm")
+    .dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+  await tick();
+  ok(
+    "valid timezone saved",
+    w.localStorage.getItem("shop_settings").includes("Asia/Dubai"),
+    w.localStorage.getItem("shop_settings")
+  );
+  // Restore the original so later assertions see the shipped value.
+  doc.getElementById("shopTimezone").value = shop.timezone;
+  doc
+    .getElementById("shopForm")
+    .dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+  await tick();
+
   console.log("\n=== TABS ===");
   const shopTab = doc.querySelector('.admin-tab[data-tab="shop"]');
   shopTab.dispatchEvent(new w.MouseEvent("click", { bubbles: true }));
@@ -152,6 +191,61 @@ function makeStorage() {
   oosBtn.dispatchEvent(new w.MouseEvent("click", { bubbles: true }));
   await tick();
   ok("stock toggle logged", w.localStorage.getItem("shop_history").includes("OOS"));
+
+  console.log("\n=== DIET (veg) EDITOR ===");
+  // Open the edit dialog for the first item and check the diet select
+  // reflects the stored value.
+  const editBtn = Array.from(doc.querySelectorAll(".item-row")[0].querySelectorAll("button")).find(
+    (b) => /Edit/i.test(b.textContent)
+  );
+  ok("item row has an edit button", !!editBtn);
+  editBtn.dispatchEvent(new w.MouseEvent("click", { bubbles: true }));
+  await tick();
+  ok("edit dialog opened", doc.getElementById("editDialog").open === true);
+  const firstItem = items[0];
+  const expectedVeg =
+    firstItem.veg === true ? "true" : firstItem.veg === false ? "false" : "";
+  ok(
+    "diet select reflects stored value",
+    doc.getElementById("editVeg").value === expectedVeg,
+    "got '" + doc.getElementById("editVeg").value + "' want '" + expectedVeg + "'"
+  );
+
+  // Set it to non-vegetarian and save.
+  doc.getElementById("editVeg").value = "false";
+  doc
+    .getElementById("editForm")
+    .dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+  await tick();
+  let stored = JSON.parse(w.localStorage.getItem("shop_items"));
+  ok(
+    "veg:false persisted as a boolean",
+    stored[0].veg === false,
+    JSON.stringify(stored[0].veg)
+  );
+  ok(
+    "diet change logged",
+    w.localStorage.getItem("shop_history").includes("diet"),
+    w.localStorage.getItem("shop_history").slice(0, 200)
+  );
+
+  // Set it back to "Not marked" — the key must disappear entirely.
+  const editBtn2 = Array.from(doc.querySelectorAll(".item-row")[0].querySelectorAll("button")).find(
+    (b) => /Edit/i.test(b.textContent)
+  );
+  editBtn2.dispatchEvent(new w.MouseEvent("click", { bubbles: true }));
+  await tick();
+  doc.getElementById("editVeg").value = "";
+  doc
+    .getElementById("editForm")
+    .dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+  await tick();
+  stored = JSON.parse(w.localStorage.getItem("shop_items"));
+  ok(
+    "unmarking removes the veg key entirely",
+    !("veg" in stored[0]),
+    JSON.stringify(stored[0])
+  );
 
   console.log("\n=== LOCK ===");
   doc.getElementById("btnLock").dispatchEvent(new w.MouseEvent("click", { bubbles: true }));

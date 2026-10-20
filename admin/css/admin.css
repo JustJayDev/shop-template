@@ -199,6 +199,11 @@ body {
   font-size: 0.8rem;
   color: var(--clr-muted);
 }
+/* Validation feedback on the shop settings form. */
+.item-count.is-error {
+  color: var(--clr-danger);
+  font-weight: 600;
+}
 
 /* --- Item List --- */
 

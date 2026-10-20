@@ -5,4 +5,4 @@ Disallow: /data/
 Disallow: /scripts/
 Disallow: /tests/
 
-Sitemap: https://example.com/sitemap.xml
+Sitemap: https://nightforgeio.github.io/shop-template/sitemap.xml

@@ -4,6 +4,7 @@
   "whatsapp": "919999999999",
   "address": "Shop No. 12, Market Road, Demo City",
   "mapsUrl": "https://maps.google.com/?q=Demo+Sweet+Shop",
+  "timezone": "Asia/Kolkata",
   "hours": {
     "open": "09:00",
     "close": "21:00",
